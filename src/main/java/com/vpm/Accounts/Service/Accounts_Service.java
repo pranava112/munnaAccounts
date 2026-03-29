@@ -3,57 +3,54 @@ package com.vpm.Accounts.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.vpm.Accounts.Entity.Journal_Book;
-import com.vpm.Accounts.Repository.Accounts_Repository;
+import com.vpm.Accounts.Entity.Account;
+import com.vpm.Accounts.Repository.AccountRepository;
 
 import java.util.Optional;
 
 @Service
 public class Accounts_Service {
 
-    private final Accounts_Repository accounts_Repository;
+    private final AccountRepository accountRepository;
 
     @Autowired
-    public Accounts_Service(Accounts_Repository accounts_Repository) {
-        this.accounts_Repository = accounts_Repository;
+    public Accounts_Service(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
     }
 
-    // Save or Create Journal_Book
-    public Journal_Book saveJournal(Journal_Book journal_book) {
-        return accounts_Repository.save(journal_book);
+    public Account saveAccount(Account account) {
+        return accountRepository.save(account);
     }
 
-    // Read/Get a Journal_Book by id
-    public Optional<Journal_Book> getJournalById(Long id) {
-        return accounts_Repository.findById(id);
+
+    public Optional<Account> getAccountById(Long id) {
+        return accountRepository.findById(id);
     }
 
-    // Update an existing Journal_Book by id
-    public Journal_Book updateJournal(Long id, Journal_Book journal_book) {
-        Optional<Journal_Book> existingJournalOpt = accounts_Repository.findById(id);
+    public Account updateAccount(Long id, Account account) {
+        Optional<Account> existingAccountOpt = accountRepository.findById(id);
 
-        if (existingJournalOpt.isPresent()) {
-            Journal_Book existingJournal = existingJournalOpt.get();
-            // Update fields if needed
-            existingJournal.setDate(journal_book.getDate());
-            existingJournal.setType(journal_book.getType());
-            existingJournal.setAmount(journal_book.getAmount());
-            existingJournal.setDescription(journal_book.getDescription());
-            existingJournal.setParticulars(journal_book.getParticulars());
-            existingJournal.setMode(journal_book.getMode());
-            return accounts_Repository.save(existingJournal);
+        if (existingAccountOpt.isPresent()) {
+        	Account existingJournal = existingAccountOpt.get();
+            
+            existingJournal.setName(account.getName());
+            existingJournal.setType(account.getType());
+            existingJournal.setCode(account.getCode());
+
+            return accountRepository.save(existingJournal);
         }
 
-        return null; // If journal doesn't exist, return null or handle as needed
+        return null; 
     }
 
-    // Delete a Journal_Book by id
-    public void deleteJournal(Long id) {
-        accounts_Repository.deleteById(id);
+    
+    public void deleteAccount(Long id) {
+        accountRepository.deleteById(id);
     }
 
-    // Get all Journal_Books
-    public Iterable<Journal_Book> getAllJournals() {
-        return accounts_Repository.findAll();
+    public Iterable<Account> getAllAccounts() {
+        return accountRepository.findAll();
     }
-}
+    
+  }
+

@@ -38,7 +38,7 @@ public class RegisterController {
         }
     }
     
-    @GetMapping // Endpoint to retrieve all students
+    @GetMapping // Endpoint to retrieve all users
     public List<Register> getAllRegister() {
         return registerService.getAllRegister();
     }

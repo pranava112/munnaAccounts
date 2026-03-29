@@ -30,4 +30,10 @@ public class RegisterService {
     public List<Register> getAllRegister() {
         return registerRepository.findAll();
     }
+    
+   
+    
+    public void deleteUser(int id) {
+    	registerRepository.deleteById(id);
+    }
 }
