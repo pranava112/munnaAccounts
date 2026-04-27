@@ -18,9 +18,9 @@ public class TradingAccountDTO {
     private double closingStock;
 
     private double grossProfit;
-    
-    
-    
+
+    // ✅ NEW: product-wise closing stock details
+    private Map<String, Double> stockDetails;
 
     // ✅ Getters & Setters
 
@@ -94,6 +94,22 @@ public class TradingAccountDTO {
 
     public void setGrossProfit(double grossProfit) {
         this.grossProfit = grossProfit;
+    }
+
+    public Map<String, Double> getStockDetails() {
+        return stockDetails;
+    }
+
+    public void setStockDetails(Map<String, Double> stockDetails) {
+        this.stockDetails = stockDetails;
+    }
+    
+    public void setDirectIncome(Map<String, Double> directIncome) {
+        this.directIncome = directIncome;
+    }
+
+    public void setDirectExpenses(Map<String, Double> directExpenses) {
+        this.directExpenses = directExpenses;
     }
 }
 

@@ -1,7 +1,7 @@
 package com.vpm.Accounts.Controller;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,45 +27,45 @@ public class JournalEntryLineController {
     private JournalEntryLineService service;
     
     @PostMapping
-    public ResponseEntity<?> save(@RequestBody JournalEntryLine line) {
-        try {
-            return ResponseEntity.ok(service.saveJournalEntryLine(line));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public CompletableFuture<ResponseEntity<?>> save(@RequestBody JournalEntryLine line) {
+        return service.saveJournalEntryLineAsync(line)
+                .<ResponseEntity<?>>thenApply(ResponseEntity::ok)
+                .exceptionally(ex -> ResponseEntity.badRequest().body(ex.getMessage()));
     }
 
     @GetMapping
-    public Iterable<JournalEntryLine> getAll() {
-        return service.getAllJournalEntryLine();
+    public CompletableFuture<List<JournalEntryLine>> getAll() {
+        return service.getAllJournalEntryLineAsync();
     }
 
     @GetMapping("/{id}")
-    public Optional<JournalEntryLine> getById(@PathVariable Long id) {
-        return service.getJournalEntryLineById(id);
+    public CompletableFuture<ResponseEntity<JournalEntryLine>> getById(@PathVariable Long id) {
+        return service.getJournalEntryLineByIdAsync(id)
+                .thenApply(account -> account.map(ResponseEntity::ok)
+                        .orElseGet(() -> ResponseEntity.notFound().build()));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody JournalEntryLine line) {
-        try {
-            return ResponseEntity.ok(service.updateJournalEntryLine(id, line));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public CompletableFuture<ResponseEntity<?>> update(@PathVariable Long id, @RequestBody JournalEntryLine line) {
+        return service.updateJournalEntryLineAsync(id, line)
+                .<ResponseEntity<?>>thenApply(ResponseEntity::ok)
+                .exceptionally(ex -> ResponseEntity.badRequest().body(ex.getMessage()));
     }
 
-//    @PutMapping("/{id}")
-//    public JournalEntryLine update(@PathVariable Long id, @RequestBody JournalEntryLine line) {
-//        return service.updateJournalEntryLine(id, line);
-//    }
-
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        service.deleteJournalEntryLine(id);
+    public CompletableFuture<ResponseEntity<Void>> delete(@PathVariable Long id) {
+        return service.getJournalEntryLineByIdAsync(id)
+                .thenCompose(existing -> {
+                    if (existing.isPresent()) {
+                        return service.deleteJournalEntryLineAsync(id)
+                                .thenApply(ignored -> ResponseEntity.noContent().<Void>build());
+                    }
+                    return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+                });
     }
     
     @GetMapping("/ledger/{accountId}")
-    public List<JournalEntryLine> getLedger(@PathVariable Long accountId) {
-        return service.getLedger(accountId);
+    public CompletableFuture<List<JournalEntryLine>> getLedger(@PathVariable Long accountId) {
+        return service.getLedgerAsync(accountId);
     }
 }

@@ -25,4 +25,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     // ✅ THIS IS REQUIRED
     Optional<Account> findByName(String name);
+
+    // ✅ Case-insensitive fallback for more robust lookup
+    Optional<Account> findByNameIgnoreCase(String name);
 }

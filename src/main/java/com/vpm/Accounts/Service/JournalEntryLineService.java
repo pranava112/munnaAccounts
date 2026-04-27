@@ -2,8 +2,11 @@ package com.vpm.Accounts.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.vpm.Accounts.Entity.JournalEntryLine;
@@ -16,9 +19,8 @@ public class JournalEntryLineService {
     @Autowired
     private JournalEntryLineRepository repo;
 
-    public JournalEntryLine saveJournalEntryLine(JournalEntryLine line) {
-
-        // ❌ BLOCK INVALID DATA
+    @Async("accountExecutor")
+    public CompletableFuture<JournalEntryLine> saveJournalEntryLineAsync(JournalEntryLine line) {
         if (line.getAccount() == null) {
             throw new RuntimeException("Account is required!");
         }
@@ -27,23 +29,28 @@ public class JournalEntryLineService {
             throw new RuntimeException("Debit or Credit must be non-zero!");
         }
 
-        return repo.save(line);
+        return CompletableFuture.completedFuture(repo.save(line));
+    }
+    
+    @Async("accountExecutor")
+    public CompletableFuture<List<JournalEntryLine>> getAllJournalEntryLineAsync() {
+        return CompletableFuture.completedFuture(repo.findAll());
     }
 
-    public List<JournalEntryLine> getAllJournalEntryLine() {
-        return repo.findAll();
+    @Async("accountExecutor")
+    public CompletableFuture<Optional<JournalEntryLine>> getJournalEntryLineByIdAsync(@NonNull Long id) {
+        return CompletableFuture.completedFuture(repo.findById(id));
     }
 
-    public Optional<JournalEntryLine> getJournalEntryLineById(Long id) {
-        return repo.findById(id);
-    }
-
-    public void deleteJournalEntryLine(Long id) {
+    @Async("accountExecutor")
+    public CompletableFuture<Void> deleteJournalEntryLineAsync(@NonNull Long id) {
         repo.deleteById(id);
+        return CompletableFuture.completedFuture(null);
     }
 
-    public List<JournalEntryLine> getLedger(Long accountId) {
-        return repo.findByAccountId(accountId);
+    @Async("accountExecutor")
+    public CompletableFuture<List<JournalEntryLine>> getLedgerAsync(@NonNull Long accountId) {
+        return CompletableFuture.completedFuture(repo.findByAccountId(accountId));
     }
 
 //	public JournalEntryLine updateJournalEntryLine(Long id, JournalEntryLine line) {
@@ -51,12 +58,12 @@ public class JournalEntryLineService {
 //		return null;
 //	}
     
-    public JournalEntryLine updateJournalEntryLine(Long id, JournalEntryLine updatedLine) {
+    @Async("accountExecutor")
+    public CompletableFuture<JournalEntryLine> updateJournalEntryLineAsync(@NonNull Long id, JournalEntryLine updatedLine) {
 
         JournalEntryLine existingLine = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Journal Entry Line not found with id: " + id));
 
-        // ✅ VALIDATION
         if (updatedLine.getAccount() == null) {
             throw new RuntimeException("Account is required!");
         }
@@ -65,22 +72,19 @@ public class JournalEntryLineService {
             throw new RuntimeException("Either Debit or Credit must be non-zero!");
         }
 
-        // ❌ Prevent both debit & credit filled
         if (updatedLine.getDebit() > 0 && updatedLine.getCredit() > 0) {
             throw new RuntimeException("Only one of Debit or Credit should be filled!");
         }
 
-        // ✅ UPDATE FIELDS
         existingLine.setAccount(updatedLine.getAccount());
         existingLine.setDebit(updatedLine.getDebit());
         existingLine.setCredit(updatedLine.getCredit());
 
-        // ⚠️ IMPORTANT: Don't change parent reference blindly
         if (updatedLine.getJournalEntry() != null) {
             existingLine.setJournalEntry(updatedLine.getJournalEntry());
         }
 
-        return repo.save(existingLine);
+        return CompletableFuture.completedFuture(repo.save(existingLine));
     }
 	
 	

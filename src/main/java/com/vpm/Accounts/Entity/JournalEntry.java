@@ -1,5 +1,4 @@
 
-
 package com.vpm.Accounts.Entity;
 
 import jakarta.persistence.*;
@@ -16,28 +15,48 @@ public class JournalEntry {
     private String entryDate;
     private String description;
 
-
-    
-    
-    @OneToMany(mappedBy = "journalEntry",
+    @OneToMany(
+            mappedBy = "journalEntry",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
-            fetch = FetchType.EAGER)   // ✅ ADD THIS
- @JsonManagedReference
- private List<JournalEntryLine> lines = new ArrayList<>();
+            fetch = FetchType.EAGER   // ⚠️ can keep, but see note below
+    )
+    @JsonManagedReference
+    private List<JournalEntryLine> lines = new ArrayList<>();
 
-    // ✅ Getters & Setters
+    // =========================
+    // ✅ GETTERS & SETTERS
+    // =========================
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getEntryDate() { return entryDate; }
-    public void setEntryDate(String entryDate) { this.entryDate = entryDate; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getEntryDate() {
+        return entryDate;
+    }
 
-    // ✅ FIXED HERE
-    public List<JournalEntryLine> getLines() { return lines; }
-    public void setLines(List<JournalEntryLine> lines) { this.lines = lines; }
+    public void setEntryDate(String entryDate) {
+        this.entryDate = entryDate;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public List<JournalEntryLine> getLines() {
+        return lines;
+    }
+
+    public void setLines(List<JournalEntryLine> lines) {
+        this.lines = lines;
+    }
 }

@@ -4,8 +4,11 @@ package com.vpm.Accounts.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.vpm.Accounts.Entity.JournalEntry;
@@ -65,15 +68,41 @@ public class JournalEntryService {
         return repo.findAll();
     }
 
-    public Optional<JournalEntry> getEntryById(Long id) {
+    public Optional<JournalEntry> getEntryById(@NonNull Long id) {
         return repo.findById(id);
     }
 
-    public void deleteEntry(Long id) {
+    public void deleteEntry(@NonNull Long id) {
         repo.deleteById(id);
     }
+
+    @Async("accountExecutor")
+    public CompletableFuture<JournalEntry> saveJournalEntryAsync(JournalEntry journalEntry) {
+        return CompletableFuture.completedFuture(saveJournalEntry(journalEntry));
+    }
+
+    @Async("accountExecutor")
+    public CompletableFuture<List<JournalEntry>> getAllEntriesAsync() {
+        return CompletableFuture.completedFuture(getAllEntries());
+    }
+
+    @Async("accountExecutor")
+    public CompletableFuture<Optional<JournalEntry>> getEntryByIdAsync(@NonNull Long id) {
+        return CompletableFuture.completedFuture(getEntryById(id));
+    }
+
+    @Async("accountExecutor")
+    public CompletableFuture<Void> deleteEntryAsync(@NonNull Long id) {
+        deleteEntry(id);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Async("accountExecutor")
+    public CompletableFuture<JournalEntry> updateJournalEntryAsync(@NonNull Long id, JournalEntry updatedEntry) {
+        return CompletableFuture.completedFuture(updateJournalEntry(id, updatedEntry));
+    }
     
-    public JournalEntry updateJournalEntry(Long id, JournalEntry updatedEntry) {
+    public JournalEntry updateJournalEntry(@NonNull Long id, JournalEntry updatedEntry) {
 
         JournalEntry existingEntry = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Journal Entry not found with id: " + id));

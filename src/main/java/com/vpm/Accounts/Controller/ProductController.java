@@ -53,13 +53,23 @@
 
 package com.vpm.Accounts.Controller;
 
-import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.vpm.Accounts.Entity.Product;
 import com.vpm.Accounts.Service.ProductService;
-
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.*;
 
 @RestController
 @RequestMapping("/api/products")
@@ -70,29 +80,31 @@ public class ProductController {
     private ProductService service;
 
     @PostMapping
-    public Product create(@RequestBody Product product) {
-        return service.saveProduct(product);
+    public CompletableFuture<ResponseEntity<Product>> create(@RequestBody Product product) {
+        return service.saveProductAsync(product)
+                .thenApply(saved -> ResponseEntity.ok(saved));
     }
 
-    
     @GetMapping
-    public List<Product> getAll() {
-        return service.getAllProducts();
+    public CompletableFuture<List<Product>> getAll() {
+        return service.getAllProductsAsync();
     }
 
     @GetMapping("/{id}")
-    public Product getById(@PathVariable Long id) {
-        return service.getProductById(id);
+    public CompletableFuture<ResponseEntity<Product>> getById(@PathVariable Long id) {
+        return service.getProductByIdAsync(id)
+                .thenApply(product -> ResponseEntity.ok(product));
     }
 
     @PutMapping("/{id}")
-    public Product update(@PathVariable Long id, @RequestBody Product product) {
-        return service.updateProduct(id, product);
+    public CompletableFuture<ResponseEntity<Product>> update(@PathVariable Long id, @RequestBody Product product) {
+        return service.updateProductAsync(id, product)
+                .thenApply(updated -> ResponseEntity.ok(updated));
     }
 
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
-        service.deleteById(id);
-        return "Deleted successfully";
+    public CompletableFuture<ResponseEntity<String>> delete(@PathVariable Long id) {
+        return service.deleteByIdAsync(id)
+                .thenApply(ignored -> ResponseEntity.ok("Deleted successfully"));
     }
 }
