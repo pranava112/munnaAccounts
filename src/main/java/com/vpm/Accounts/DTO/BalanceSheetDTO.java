@@ -3,31 +3,32 @@
 
 package com.vpm.Accounts.DTO;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 public class BalanceSheetDTO {
 
-    private Map<String, Double> assets;
-    private Map<String, Double> liabilities;
+    private Map<String, BigDecimal> assets;
+    private Map<String, BigDecimal> liabilities;
 
     // ✅ NEW FIELD
-    private Map<String, Double> capitalDetails;
+    private Map<String, BigDecimal> capitalDetails;
 
-    private double totalAssets;
-    private double totalLiabilities;
+    private BigDecimal totalAssets;
+    private BigDecimal totalLiabilities;
 
-    public Map<String, Double> getAssets() { return assets; }
-    public void setAssets(Map<String, Double> assets) { this.assets = assets; }
+    public Map<String, BigDecimal> getAssets() { return assets; }
+    public void setAssets(Map<String, BigDecimal> assets) { this.assets = assets; }
 
-    public Map<String, Double> getLiabilities() { return liabilities; }
-    public void setLiabilities(Map<String, Double> liabilities) { this.liabilities = liabilities; }
+    public Map<String, BigDecimal> getLiabilities() { return liabilities; }
+    public void setLiabilities(Map<String, BigDecimal> liabilities) { this.liabilities = liabilities; }
 
-    public Map<String, Double> getCapitalDetails() { return capitalDetails; }
-    public void setCapitalDetails(Map<String, Double> capitalDetails) { this.capitalDetails = capitalDetails; }
+    public Map<String, BigDecimal> getCapitalDetails() { return capitalDetails; }
+    public void setCapitalDetails(Map<String, BigDecimal> capitalDetails) { this.capitalDetails = capitalDetails; }
 
-    public double getTotalAssets() { return totalAssets; }
-    public void setTotalAssets(double totalAssets) { this.totalAssets = totalAssets; }
+    public BigDecimal getTotalAssets() { return totalAssets; }
+    public void setTotalAssets(BigDecimal totalAssets) { this.totalAssets = totalAssets; }
 
-    public double getTotalLiabilities() { return totalLiabilities; }
-    public void setTotalLiabilities(double totalLiabilities) { this.totalLiabilities = totalLiabilities; }
+    public BigDecimal getTotalLiabilities() { return totalLiabilities; }
+    public void setTotalLiabilities(BigDecimal totalLiabilities) { this.totalLiabilities = totalLiabilities; }
 }

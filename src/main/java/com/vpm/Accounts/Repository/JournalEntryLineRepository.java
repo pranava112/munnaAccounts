@@ -13,6 +13,8 @@ public interface JournalEntryLineRepository extends JpaRepository<JournalEntryLi
 	@Query("SELECT l FROM JournalEntryLine l WHERE l.account.id = :accountId")
 	List<JournalEntryLine> findByAccountId(@Param("accountId") Long accountId);
 
+	boolean existsByAccount_Id(Long accountId);
+
 }
 
 

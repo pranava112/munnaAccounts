@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,21 +42,21 @@ public class JournalEntryController {
     }
 
     @GetMapping("/{id}")
-    public CompletableFuture<ResponseEntity<JournalEntry>> getEntry(@PathVariable Long id) {
-        return journalEntryService.getEntryByIdAsync(id)
+    public CompletableFuture<ResponseEntity<JournalEntry>> getEntry(@NonNull @PathVariable Long id) {
+        return journalEntryService.getEntryByIdAsync( id)
                 .thenApply(entryOpt -> entryOpt.map(ResponseEntity::ok)
                         .orElse(ResponseEntity.notFound().build()));
     }
     
     @PutMapping("/{id}")
-    public CompletableFuture<ResponseEntity<?>> updateEntry(@PathVariable Long id, @RequestBody JournalEntry entry) {
+    public CompletableFuture<ResponseEntity<?>> updateEntry(@NonNull @PathVariable Long id, @RequestBody JournalEntry entry) {
         return journalEntryService.updateJournalEntryAsync(id, entry)
                 .<ResponseEntity<?>>thenApply(ResponseEntity::ok)
                 .exceptionally(ex -> ResponseEntity.badRequest().body(ex.getMessage()));
     }
 
     @DeleteMapping("/{id}")
-    public CompletableFuture<ResponseEntity<Void>> deleteEntry(@PathVariable Long id) {
+    public CompletableFuture<ResponseEntity<Void>> deleteEntry(@NonNull @PathVariable Long id) {
         return journalEntryService.getEntryByIdAsync(id)
                 .thenCompose(existing -> existing.map(journal -> journalEntryService.deleteEntryAsync(id)
                         .thenApply(ignored -> ResponseEntity.noContent().<Void>build()))

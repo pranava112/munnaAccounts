@@ -1,10 +1,16 @@
+
+
+
+
 package com.vpm.Accounts.Controller;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull; // Ensure this import is used
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,52 +29,93 @@ import com.vpm.Accounts.Service.Accounts_Service;
 @CrossOrigin(origins = {"http://localhost:5173"})
 public class Accounts_Controller {
 
-    private final Accounts_Service accounts_Service;
+    private final Accounts_Service accountsService;
 
-    // @Autowired
-    public Accounts_Controller(Accounts_Service accounts_Service) {
-        this.accounts_Service = accounts_Service;
+    public Accounts_Controller(Accounts_Service accountsService) {
+        this.accountsService = accountsService;
     }
 
     @PostMapping
-    public CompletableFuture<ResponseEntity<Account>> createJournal(@RequestBody Account Account) {
-        return accounts_Service.saveAccountAsync(Account)
-                .thenApply(createdJournal -> new ResponseEntity<>(createdJournal, HttpStatus.CREATED));
-    }
-
-    @GetMapping("/{id}")
-    public CompletableFuture<ResponseEntity<Account>> getJournalById(@PathVariable Long id) {
-        return accounts_Service.getAccountByIdAsync(id)
-                .thenApply(account -> account.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                        .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND)));
+    public CompletableFuture<ResponseEntity<Account>> createAccount(@RequestBody @NonNull Account account) {
+        return accountsService.saveAccountAsync(account)
+                .thenApply(created -> ResponseEntity.status(HttpStatus.CREATED).body(created))
+                .exceptionally(this::handleException);
     }
 
     @PutMapping("/{id}")
-    public CompletableFuture<ResponseEntity<Account>> updateJournal(@PathVariable Long id, @RequestBody Account account) {
-        return accounts_Service.updateAccountAsync(id, account)
-                .thenApply(updatedAccount -> {
-                    if (updatedAccount != null) {
-                        return new ResponseEntity<>(updatedAccount, HttpStatus.OK);
-                    }
-                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                });
+    public CompletableFuture<ResponseEntity<Account>> updateAccount(
+            @PathVariable @NonNull Long id, 
+            @RequestBody @NonNull Account account) {
+        
+        return accountsService.updateAccountAsync(id, account)
+                .thenApply(updated -> ResponseEntity.ok().body(updated))
+                .exceptionally(this::handleException);
+    }
+
+    @GetMapping("/{id}")
+    public CompletableFuture<ResponseEntity<Account>> getAccountById(@PathVariable @NonNull Long id) {
+        return accountsService.getAccountByIdAsync(id)
+                .thenApply(opt -> opt
+                        .map(ResponseEntity::ok)
+                        .orElseGet(() -> ResponseEntity.notFound().build()))
+                .exceptionally(this::handleException);
     }
 
     @DeleteMapping("/{id}")
-    public CompletableFuture<ResponseEntity<Void>> deleteJournal(@PathVariable Long id) {
-        return accounts_Service.getAccountByIdAsync(id)
-                .thenCompose(existing -> {
-                    if (existing.isPresent()) {
-                        return accounts_Service.deleteAccountAsync(id)
-                                .thenApply(ignored -> new ResponseEntity<Void>(HttpStatus.NO_CONTENT));
+    public CompletableFuture<ResponseEntity<?>> deleteAccount(@PathVariable @NonNull Long id) {
+        return accountsService.getAccountByIdAsync(id)
+                .thenCompose(opt -> {
+                    if (opt.isPresent()) {
+                        return accountsService.deleteAccountAsync(id)
+                                .thenApply(ignored -> (ResponseEntity<?>) ResponseEntity.noContent().build());
                     }
-                    return CompletableFuture.completedFuture(new ResponseEntity<Void>(HttpStatus.NOT_FOUND));
-                });
+                    return CompletableFuture.completedFuture(
+                            (ResponseEntity<?>) ResponseEntity.notFound().build());
+                })
+                .exceptionally(this::handleDeleteException);
     }
 
     @GetMapping
-    public CompletableFuture<ResponseEntity<List<Account>>> getAllAccount() {
-        return accounts_Service.getAllAccountsAsync()
-                .thenApply(accounts -> new ResponseEntity<>(accounts, HttpStatus.OK));
+    public CompletableFuture<ResponseEntity<List<Account>>> getAllAccounts() {
+        return accountsService.getAllAccountsAsync()
+                .thenApply(ResponseEntity::ok)
+                .exceptionally(this::handleException);
+    }
+
+    /**
+     * Centralized Error Handler to satisfy @NonNull requirements.
+     * This catches the 'Account not found' RuntimeException from the service.
+     */
+    private <T> ResponseEntity<T> handleException(Throwable ex) {
+        Throwable cause = ex;
+        while (cause instanceof CompletionException && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        
+        String message = cause.getMessage();
+        if (message != null && message.contains("not found")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+
+    private ResponseEntity<?> handleDeleteException(Throwable ex) {
+        Throwable cause = ex;
+        while (cause instanceof CompletionException && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+
+        String message = cause.getMessage();
+        if (message != null && message.contains("used by journal entries")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(java.util.Map.of("message", message));
+        }
+
+        if (message != null && message.contains("not found")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 }

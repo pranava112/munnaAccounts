@@ -1,8 +1,15 @@
 package com.vpm.Accounts.Entity;
 
-import jakarta.persistence.*;
+import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 
 @Entity
@@ -12,8 +19,8 @@ public class JournalEntryLine {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private double debit;
-    private double credit;
+    private BigDecimal debit;
+    private BigDecimal credit;
 
     @ManyToOne
     @JoinColumn(name = "account_id")
@@ -37,11 +44,11 @@ public class JournalEntryLine {
 	public Long getId() {return id;}
 	public void setId( Long id) {this.id=id;}
 	
-	public double getDebit() {return debit;}
-	public void setDebit(double debit) {this.debit=debit;}
+	public BigDecimal getDebit() {return debit;}
+	public void setDebit(BigDecimal debit) {this.debit=debit;}
 	
-	public double getCredit() {return credit;}
-	public void setCredit(double credit) {this.credit=credit;}
+	public BigDecimal getCredit() {return credit;}
+	public void setCredit(BigDecimal credit) {this.credit=credit;}
 	
 	public JournalEntry getJournalEntry() {return journalEntry;}
 	public void setJournalEntry(JournalEntry journalEntry) {this.journalEntry=journalEntry;}

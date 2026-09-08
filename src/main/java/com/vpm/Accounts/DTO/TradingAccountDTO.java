@@ -2,151 +2,114 @@
 
 package com.vpm.Accounts.DTO;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 public class TradingAccountDTO {
 
-    private Map<String, Double> directIncome;
-    private Map<String, Double> directExpenses;
+    private Map<String, BigDecimal> directIncome;
+    private Map<String, BigDecimal> directExpenses;
 
-    private double totalDirectIncome;
-    private double totalDirectExpenses;
+    private BigDecimal totalDirectIncome;
+    private BigDecimal totalDirectExpenses;
 
-    private double purchases;
-    private double sales;
-    private double openingStock;
-    private double closingStock;
+    private BigDecimal purchases;
+    private BigDecimal sales;
+    private BigDecimal openingStock;
+    private BigDecimal closingStock;
 
-    private double grossProfit;
+    private BigDecimal grossProfit;
 
     // ✅ NEW: product-wise closing stock details
-    private Map<String, Double> stockDetails;
+    private Map<String, BigDecimal> stockDetails;
 
     // ✅ Getters & Setters
 
-    public Map<String, Double> getDirectIncome() {
+    public Map<String, BigDecimal> getDirectIncome() {
         return directIncome;
     }
 
-    public void setDirectIncomeDetails(Map<String, Double> directIncome) {
+    public void setDirectIncomeDetails(Map<String, BigDecimal> directIncome) {
         this.directIncome = directIncome;
     }
 
-    public Map<String, Double> getDirectExpenses() {
+    public Map<String, BigDecimal> getDirectExpenses() {
         return directExpenses;
     }
 
-    public void setDirectExpensesDetails(Map<String, Double> directExpenses) {
+    public void setDirectExpensesDetails(Map<String, BigDecimal> directExpenses) {
         this.directExpenses = directExpenses;
     }
 
-    public double getTotalDirectIncome() {
+    public BigDecimal getTotalDirectIncome() {
         return totalDirectIncome;
     }
 
-    public void setDirectTotalIncome(double totalDirectIncome) {
+    public void setDirectTotalIncome(BigDecimal totalDirectIncome) {
         this.totalDirectIncome = totalDirectIncome;
     }
 
-    public double getTotalDirectExpenses() {
+    public BigDecimal getTotalDirectExpenses() {
         return totalDirectExpenses;
     }
 
-    public void setDirectTotalExpense(double totalDirectExpenses) {
+    public void setDirectTotalExpense(BigDecimal totalDirectExpenses) {
         this.totalDirectExpenses = totalDirectExpenses;
     }
 
-    public double getPurchases() {
+    public BigDecimal getPurchases() {
         return purchases;
     }
 
-    public void setPurchases(double purchases) {
+    public void setPurchases(BigDecimal purchases) {
         this.purchases = purchases;
     }
 
-    public double getSales() {
+    public BigDecimal getSales() {
         return sales;
     }
 
-    public void setSales(double sales) {
+    public void setSales(BigDecimal sales) {
         this.sales = sales;
     }
 
-    public double getOpeningStock() {
+    public BigDecimal getOpeningStock() {
         return openingStock;
     }
 
-    public void setOpeningStock(double openingStock) {
+    public void setOpeningStock(BigDecimal openingStock) {
         this.openingStock = openingStock;
     }
 
-    public double getClosingStock() {
+    public BigDecimal getClosingStock() {
         return closingStock;
     }
 
-    public void setClosingStock(double closingStock) {
+    public void setClosingStock(BigDecimal closingStock) {
         this.closingStock = closingStock;
     }
 
-    public double getGrossProfit() {
+    public BigDecimal getGrossProfit() {
         return grossProfit;
     }
 
-    public void setGrossProfit(double grossProfit) {
+    public void setGrossProfit(BigDecimal grossProfit) {
         this.grossProfit = grossProfit;
     }
 
-    public Map<String, Double> getStockDetails() {
+    public Map<String, BigDecimal> getStockDetails() {
         return stockDetails;
     }
 
-    public void setStockDetails(Map<String, Double> stockDetails) {
+    public void setStockDetails(Map<String, BigDecimal> stockDetails) {
         this.stockDetails = stockDetails;
     }
     
-    public void setDirectIncome(Map<String, Double> directIncome) {
+    public void setDirectIncome(Map<String, BigDecimal> directIncome) {
         this.directIncome = directIncome;
     }
 
-    public void setDirectExpenses(Map<String, Double> directExpenses) {
+    public void setDirectExpenses(Map<String, BigDecimal> directExpenses) {
         this.directExpenses = directExpenses;
     }
 }
-
-//
-//package com.vpm.Accounts.DTO;
-//
-//import java.util.Map;
-//
-//public class TradingAccountDTO {
-//
-//    private double purchases;
-//    private double sales;
-//    private double openingStock;
-//    private double closingStock;
-//
-//    private double grossProfit;
-//
-//    // ✅ NEW: Stock Details
-//    private Map<String, Double> stockDetails;
-//
-//    // Getters & Setters
-//
-//    public double getPurchases() { return purchases; }
-//    public void setPurchases(double purchases) { this.purchases = purchases; }
-//
-//    public double getSales() { return sales; }
-//    public void setSales(double sales) { this.sales = sales; }
-//
-//    public double getOpeningStock() { return openingStock; }
-//    public void setOpeningStock(double openingStock) { this.openingStock = openingStock; }
-//
-//    public double getClosingStock() { return closingStock; }
-//    public void setClosingStock(double closingStock) { this.closingStock = closingStock; }
-//
-//    public double getGrossProfit() { return grossProfit; }
-//    public void setGrossProfit(double grossProfit) { this.grossProfit = grossProfit; }
-//
-//    public Map<String, Double> getStockDetails() { return stockDetails; }
-//    public void setStockDetails(Map<String, Double> stockDetails) { this.stockDetails = stockDetails; }
-//}

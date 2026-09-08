@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,21 +40,21 @@ public class JournalEntryLineController {
     }
 
     @GetMapping("/{id}")
-    public CompletableFuture<ResponseEntity<JournalEntryLine>> getById(@PathVariable Long id) {
+    public CompletableFuture<ResponseEntity<JournalEntryLine>> getById(@NonNull @PathVariable Long id) {
         return service.getJournalEntryLineByIdAsync(id)
                 .thenApply(account -> account.map(ResponseEntity::ok)
                         .orElseGet(() -> ResponseEntity.notFound().build()));
     }
     
     @PutMapping("/{id}")
-    public CompletableFuture<ResponseEntity<?>> update(@PathVariable Long id, @RequestBody JournalEntryLine line) {
+    public CompletableFuture<ResponseEntity<?>> update(@NonNull @PathVariable Long id, @RequestBody JournalEntryLine line) {
         return service.updateJournalEntryLineAsync(id, line)
                 .<ResponseEntity<?>>thenApply(ResponseEntity::ok)
                 .exceptionally(ex -> ResponseEntity.badRequest().body(ex.getMessage()));
     }
 
     @DeleteMapping("/{id}")
-    public CompletableFuture<ResponseEntity<Void>> delete(@PathVariable Long id) {
+    public CompletableFuture<ResponseEntity<Void>> delete(@NonNull @PathVariable Long id) {
         return service.getJournalEntryLineByIdAsync(id)
                 .thenCompose(existing -> {
                     if (existing.isPresent()) {
@@ -65,7 +66,7 @@ public class JournalEntryLineController {
     }
     
     @GetMapping("/ledger/{accountId}")
-    public CompletableFuture<List<JournalEntryLine>> getLedger(@PathVariable Long accountId) {
+    public CompletableFuture<List<JournalEntryLine>> getLedger(@NonNull @PathVariable Long accountId) {
         return service.getLedgerAsync(accountId);
     }
 }

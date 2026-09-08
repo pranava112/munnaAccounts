@@ -12,6 +12,9 @@ public class JournalEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
+    private String voucherNumber;
+
     private String entryDate;
     private String description;
 
@@ -30,6 +33,14 @@ public class JournalEntry {
 
     public Long getId() {
         return id;
+    }
+
+    public String getVoucherNumber(){
+        return voucherNumber;
+    }
+
+    public void setVoucherNumber(String voucherNumber){
+        this.voucherNumber=voucherNumber;
     }
 
     public void setId(Long id) {

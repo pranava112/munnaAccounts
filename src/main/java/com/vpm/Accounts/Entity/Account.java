@@ -1,5 +1,7 @@
 package com.vpm.Accounts.Entity;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,6 +12,7 @@ import jakarta.persistence.Id;
 
 
 @Entity
+
 
 public class Account {
 
@@ -25,7 +28,7 @@ public class Account {
     private String code;
     
     @Column(nullable = false)
-    private double balance = 0.0;
+    private BigDecimal balance = BigDecimal.ZERO;
     
     public Long getId() {return id;}
     public void setId(Long id) {this.id=id;}
@@ -39,21 +42,36 @@ public class Account {
     public String getCode() {return code;}
     public void setCode(String code) {this.code=code;}
     
-    public double getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
-    public void setBalance(double balance) {
+    public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
     
-    public void debit(double amount) {
-        this.balance += amount;
-    }
+    // public void debit(BigDecimal amount) {
+    //     this.balance += amount;
+    // }
 
-    public void credit(double amount) {
-        this.balance -= amount;
-    }
+    // public void credit(BigDecimal amount) {
+    //     this.balance -= amount;
+    // }
+
+    public void debit(BigDecimal amount) {
+    this.balance = this.balance.add(amount);
+}
+
+public void credit(BigDecimal amount) {
+    this.balance = this.balance.subtract(amount);
+}
     
     
 }
+
+// class Account {
+//     Long id;
+//     String name;
+//     Account parent;
+//     List<Account> children;
+// }

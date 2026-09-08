@@ -1,33 +1,34 @@
 package com.vpm.Accounts.DTO;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 public class ProfitLossDTO {
 
-    private Map<String, Double> incomeDetails;
-    private Map<String, Double> expenseDetails;
+    private Map<String, BigDecimal> incomeDetails;
+    private Map<String, BigDecimal> expenseDetails;
 
-    private double totalIncome;
-    private double totalExpense;
-    private double netProfit;
+    private BigDecimal totalIncome;
+    private BigDecimal totalExpense;
+    private BigDecimal netProfit;
 
-    private double grossProfit;
+    private BigDecimal grossProfit;
     
-    public double getGrossProfit() {return grossProfit;}
-    public void setGrossProfit(double grossProfit) {this.grossProfit=grossProfit;}
+    public BigDecimal getGrossProfit() {return grossProfit;}
+    public void setGrossProfit(BigDecimal grossProfit) {this.grossProfit=grossProfit;}
     
-    public Map<String, Double> getIncomeDetails() { return incomeDetails; }
-    public void setIncomeDetails(Map<String, Double> incomeDetails) { this.incomeDetails = incomeDetails; }
+    public Map<String, BigDecimal> getIncomeDetails() { return incomeDetails; }
+    public void setIncomeDetails(Map<String, BigDecimal> incomeDetails) { this.incomeDetails = incomeDetails; }
 
-    public Map<String, Double> getExpenseDetails() { return expenseDetails; }
-    public void setExpenseDetails(Map<String, Double> expenseDetails) { this.expenseDetails = expenseDetails; }
+    public Map<String, BigDecimal> getExpenseDetails() { return expenseDetails; }
+    public void setExpenseDetails(Map<String, BigDecimal> expenseDetails) { this.expenseDetails = expenseDetails; }
 
-    public double getTotalIncome() { return totalIncome; }
-    public void setTotalIncome(double totalIncome) { this.totalIncome = totalIncome; }
+    public BigDecimal getTotalIncome() { return totalIncome; }
+    public void setTotalIncome(BigDecimal totalIncome) { this.totalIncome = totalIncome; }
 
-    public double getTotalExpense() { return totalExpense; }
-    public void setTotalExpense(double totalExpense) { this.totalExpense = totalExpense; }
+    public BigDecimal getTotalExpense() { return totalExpense; }
+    public void setTotalExpense(BigDecimal totalExpense) { this.totalExpense = totalExpense; }
 
-    public double getNetProfit() { return netProfit; }
-    public void setNetProfit(double netProfit) { this.netProfit = netProfit; }
+    public BigDecimal getNetProfit() { return netProfit; }
+    public void setNetProfit(BigDecimal netProfit) { this.netProfit = netProfit; }
 }

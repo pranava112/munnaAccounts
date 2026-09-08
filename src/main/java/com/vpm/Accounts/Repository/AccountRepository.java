@@ -17,15 +17,21 @@
 
 package com.vpm.Accounts.Repository;
 
+import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+
 import com.vpm.Accounts.Entity.Account;
 
 public interface AccountRepository extends JpaRepository<Account, Long> {
 
-    // ✅ THIS IS REQUIRED
-    Optional<Account> findByName(String name);
+    // Use first matching account to avoid non-unique result errors
+    Optional<Account> findFirstByName(String name);
+    Optional<Account> findFirstByNameIgnoreCase(String name);
 
-    // ✅ Case-insensitive fallback for more robust lookup
-    Optional<Account> findByNameIgnoreCase(String name);
+    // If there are duplicate names, allow listing all matches for diagnostics/fallback
+    List<Account> findAllByName(String name);
+    List<Account> findAllByNameIgnoreCase(String name);
+
 }
