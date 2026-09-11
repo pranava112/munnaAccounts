@@ -65,8 +65,7 @@ public class Account {
 public void credit(BigDecimal amount) {
     this.balance = this.balance.subtract(amount);
 }
-    
-    
+  
 }
 
 // class Account {
