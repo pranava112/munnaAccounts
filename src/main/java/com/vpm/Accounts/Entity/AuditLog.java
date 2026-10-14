@@ -9,14 +9,19 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.EntityListeners;
+import org.hibernate.annotations.TenantId;
+import com.vpm.Accounts.security.TenantEntityListener;
 
 @Entity
 @Table(name = "audit_logs")
+@EntityListeners(TenantEntityListener.class)
 public class AuditLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @TenantId
     @Column(name = "tenant_id", nullable = false, updatable = false)
     private Long tenantId;
 

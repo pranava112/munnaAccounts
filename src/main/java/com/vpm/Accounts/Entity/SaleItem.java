@@ -5,8 +5,11 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import org.hibernate.annotations.TenantId;
+import com.vpm.Accounts.security.TenantEntityListener;
 
 @Entity
+@EntityListeners(TenantEntityListener.class)
 public class SaleItem {
 
     @Id
@@ -26,6 +29,10 @@ public class SaleItem {
     @JoinColumn(name = "sale_id")
     @JsonBackReference
     private Sale sale;
+
+    @TenantId
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private Long tenantId;
 
     public BigDecimal getTotal() {
         if (price == null) {
@@ -48,4 +55,6 @@ public class SaleItem {
 
     public Sale getSale() { return sale; }
     public void setSale(Sale sale) { this.sale = sale; }
+    public Long getTenantId() { return tenantId; }
+    public void setTenantId(Long tenantId) { this.tenantId = tenantId; }
 }

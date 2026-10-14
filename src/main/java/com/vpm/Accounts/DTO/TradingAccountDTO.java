@@ -16,6 +16,7 @@ public class TradingAccountDTO {
     private BigDecimal purchases;
     private BigDecimal sales;
     private BigDecimal openingStock;
+    private BigDecimal stockIntroduced;
     private BigDecimal closingStock;
 
     private BigDecimal grossProfit;
@@ -79,6 +80,14 @@ public class TradingAccountDTO {
 
     public void setOpeningStock(BigDecimal openingStock) {
         this.openingStock = openingStock;
+    }
+
+    public BigDecimal getStockIntroduced() {
+        return stockIntroduced;
+    }
+
+    public void setStockIntroduced(BigDecimal stockIntroduced) {
+        this.stockIntroduced = stockIntroduced;
     }
 
     public BigDecimal getClosingStock() {

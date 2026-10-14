@@ -1,5 +1,7 @@
 package com.vpm.Accounts.DTO;
 
+import java.math.BigDecimal;
+
 public class JournalEntryRequest {
     private String transaction;
 
@@ -15,11 +17,11 @@ public class JournalEntryRequest {
 class JournalEntryResponse {
     private String debit;
     private String credit;
-    private double amount;
+    private BigDecimal amount;
 
     public JournalEntryResponse() {}
 
-    public JournalEntryResponse(String debit, String credit, double amount) {
+    public JournalEntryResponse(String debit, String credit, BigDecimal amount) {
         this.debit = debit;
         this.credit = credit;
         this.amount = amount;
@@ -41,11 +43,11 @@ class JournalEntryResponse {
         this.credit = credit;
     }
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 }

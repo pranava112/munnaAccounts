@@ -10,9 +10,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
+import org.hibernate.annotations.TenantId;
+import com.vpm.Accounts.security.TenantEntityListener;
 
 
 @Entity
+@EntityListeners(TenantEntityListener.class)
 public class JournalEntryLine {
 
     @Id
@@ -36,6 +41,10 @@ public class JournalEntryLine {
     @JsonBackReference   // ✅ FIX LOOP
     private JournalEntry journalEntry;
 
+    @TenantId
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private Long tenantId;
+
     // getters & setters
     
     
@@ -55,6 +64,9 @@ public class JournalEntryLine {
 	
 	public Account getAccount() {return account;}
 	public void setAccount(Account account) {this.account=account;}
+
+    public Long getTenantId() { return tenantId; }
+    public void setTenantId(Long tenantId) { this.tenantId = tenantId; }
 	
 	
 	

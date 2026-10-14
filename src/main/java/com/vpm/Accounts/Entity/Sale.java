@@ -1,11 +1,18 @@
 package com.vpm.Accounts.Entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.TenantId;
+import com.vpm.Accounts.security.TenantEntityListener;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(
+        name = "uk_sale_tenant_voucher",
+        columnNames = {"tenant_id", "voucher_number"}))
+@EntityListeners(TenantEntityListener.class)
 public class Sale {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -13,7 +20,7 @@ public class Sale {
 
     private String voucherNumber;
     private String customerName;
-    private String date;
+    private LocalDate date;
     private Long phoneNo;
 
     @Column(precision = 19, scale = 2)
@@ -34,6 +41,27 @@ public class Sale {
     @Column(precision = 19, scale = 2)
     private BigDecimal creditAmount = BigDecimal.ZERO;
 
+    @Column(precision = 19, scale = 2)
+    private BigDecimal gstTaxableAmount = BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal gstCgst = BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal gstSgst = BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal gstIgst = BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal gstCess = BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal gstTotal = BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal grandTotal = BigDecimal.ZERO;
+
     private boolean discountEnabled;
     private boolean commissionEnabled;
     private boolean partialCashEnabled;
@@ -46,6 +74,10 @@ public class Sale {
 
     @Column(precision = 19, scale = 2)
     private BigDecimal commissionValue = BigDecimal.ZERO;
+
+    @TenantId
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private Long tenantId;
 
     @OneToMany(mappedBy = "sale",
             cascade = CascadeType.ALL,
@@ -62,8 +94,8 @@ public class Sale {
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
 
-    public String getDate() { return date; }
-    public void setDate(String date) { this.date = date; }
+    public LocalDate getDate() { return date; }
+    public void setDate(LocalDate date) { this.date = date; }
 
     public Long getPhoneNo() { return phoneNo; }
     public void setPhoneNo(Long phoneNo) { this.phoneNo = phoneNo; }
@@ -85,6 +117,20 @@ public class Sale {
 
     public BigDecimal getCreditAmount() { return creditAmount; }
     public void setCreditAmount(BigDecimal creditAmount) { this.creditAmount = creditAmount; }
+    public BigDecimal getGstTaxableAmount() { return gstTaxableAmount; }
+    public void setGstTaxableAmount(BigDecimal value) { this.gstTaxableAmount = value; }
+    public BigDecimal getGstCgst() { return gstCgst; }
+    public void setGstCgst(BigDecimal value) { this.gstCgst = value; }
+    public BigDecimal getGstSgst() { return gstSgst; }
+    public void setGstSgst(BigDecimal value) { this.gstSgst = value; }
+    public BigDecimal getGstIgst() { return gstIgst; }
+    public void setGstIgst(BigDecimal value) { this.gstIgst = value; }
+    public BigDecimal getGstCess() { return gstCess; }
+    public void setGstCess(BigDecimal value) { this.gstCess = value; }
+    public BigDecimal getGstTotal() { return gstTotal; }
+    public void setGstTotal(BigDecimal value) { this.gstTotal = value; }
+    public BigDecimal getGrandTotal() { return grandTotal; }
+    public void setGrandTotal(BigDecimal value) { this.grandTotal = value; }
 
     public boolean isDiscountEnabled() { return discountEnabled; }
     public boolean getDiscountEnabled() { return discountEnabled; }
@@ -112,4 +158,6 @@ public class Sale {
 
     public List<SaleItem> getItems() { return items; }
     public void setItems(List<SaleItem> items) { this.items = items; }
+    public Long getTenantId() { return tenantId; }
+    public void setTenantId(Long tenantId) { this.tenantId = tenantId; }
 }

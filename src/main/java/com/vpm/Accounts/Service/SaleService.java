@@ -12,10 +12,13 @@ import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.vpm.Accounts.Entity.Account;
 import com.vpm.Accounts.Entity.JournalEntry;
 import com.vpm.Accounts.Entity.JournalEntryLine;
+import com.vpm.Accounts.Entity.FinancialYear;
+import com.vpm.Accounts.Entity.AccountingPeriod;
 import com.vpm.Accounts.Entity.Product;
 import com.vpm.Accounts.Entity.Sale;
 import com.vpm.Accounts.Entity.SaleItem;
@@ -23,6 +26,11 @@ import com.vpm.Accounts.Repository.AccountRepository;
 import com.vpm.Accounts.Repository.JournalEntryRepository;
 import com.vpm.Accounts.Repository.ProductRepository;
 import com.vpm.Accounts.Repository.SaleRepository;
+import com.vpm.Accounts.Repository.FinancialYearRepository;
+import com.vpm.Accounts.Repository.AccountingPeriodRepository;
+import com.vpm.Accounts.security.TenantContext;
+import com.vpm.Accounts.Service.GST.TaxApiService;
+import com.vpm.Accounts.Entity.AccountType;
 
 @Service
 public class SaleService {
@@ -38,6 +46,21 @@ public class SaleService {
 
     @Autowired
     private JournalEntryRepository journalRepo;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+
+    @Autowired
+    private FinancialYearRepository financialYearRepo;
+
+    @Autowired
+    private AccountingPeriodRepository accountingPeriodRepo;
+
+    @Autowired
+    private ProductService productService;
+
+    @Autowired
+    private TaxApiService taxApiService;
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
@@ -124,6 +147,10 @@ public class SaleService {
     }
 
     private void validateAndPrepareSale(Sale sale) {
+        validateAndPrepareSale(sale, false);
+    }
+
+    private void validateAndPrepareSale(Sale sale, boolean preserveInvoicePrices) {
         if (sale == null) {
             throw new IllegalArgumentException("Sale is required");
         }
@@ -133,8 +160,31 @@ public class SaleService {
         if (sale.getCustomerName() == null || sale.getCustomerName().isBlank()) {
             throw new IllegalArgumentException("Customer is required");
         }
-        if (sale.getDate() == null || sale.getDate().isBlank()) {
+        // if (sale.getDate() == null || sale.getDate().isBlank()) {
+        //     throw new IllegalArgumentException("Sale date is required");
+        // }
+
+        if (sale.getDate() == null) {
             throw new IllegalArgumentException("Sale date is required");
+        }
+
+        FinancialYear financialYear = financialYearRepo
+                .findFirstByStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        sale.getDate(), sale.getDate())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No financial year exists for sale date: " + sale.getDate()));
+        if (financialYear.isClosed()) {
+            throw new IllegalStateException(
+                    "Financial year " + financialYear.getName() + " is closed");
+        }
+        AccountingPeriod accountingPeriod = accountingPeriodRepo
+                .findFirstByFinancialYear_IdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        financialYear.getId(), sale.getDate(), sale.getDate())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No accounting period exists for sale date: " + sale.getDate()));
+        if (accountingPeriod.isClosed()) {
+            throw new IllegalStateException(
+                    "Accounting period " + accountingPeriod.getName() + " is closed");
         }
 
         BigDecimal subtotal = BigDecimal.ZERO;
@@ -153,13 +203,17 @@ public class SaleService {
             if (item.getPrice() == null || item.getPrice().compareTo(BigDecimal.ZERO) < 0) {
                 throw new IllegalArgumentException("Price cannot be negative for product: " + product.getName());
             }
-            BigDecimal currentStock = zeroIfNull(product.getOpeningStock());
+            BigDecimal currentStock = zeroIfNull(product.getCurrentStockQuantity());
             BigDecimal requested = BigDecimal.valueOf(item.getQuantity());
             if (currentStock.compareTo(requested) < 0) {
                 throw new IllegalArgumentException("Requested quantity exceeds available stock for product: " + product.getName());
             }
             item.setProduct(product);
-            item.setPrice(product.getSellingPrice() != null ? product.getSellingPrice() : item.getPrice());
+            if (!preserveInvoicePrices || item.getPrice() == null) {
+                item.setPrice(product.getSellingPrice() != null
+                        ? product.getSellingPrice()
+                        : item.getPrice());
+            }
             subtotal = subtotal.add(item.getPrice().multiply(requested));
         }
 
@@ -218,7 +272,7 @@ public class SaleService {
             }
             Product product = productRepo.findById(item.getProduct().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Product not found: " + item.getProduct().getId()));
-            product.setOpeningStock(zeroIfNull(product.getOpeningStock()).add(BigDecimal.valueOf(item.getQuantity())));
+            product.setCurrentStockQuantity(zeroIfNull(product.getCurrentStockQuantity()).add(BigDecimal.valueOf(item.getQuantity())));
             productRepo.save(product);
         }
     }
@@ -233,12 +287,12 @@ public class SaleService {
             }
             Product product = productRepo.findById(item.getProduct().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Product not found: " + item.getProduct().getId()));
-            BigDecimal currentStock = zeroIfNull(product.getOpeningStock());
+            BigDecimal currentStock = zeroIfNull(product.getCurrentStockQuantity());
             BigDecimal quantity = BigDecimal.valueOf(item.getQuantity());
             if (currentStock.compareTo(quantity) < 0) {
                 throw new IllegalArgumentException("Requested quantity exceeds available stock for product: " + product.getName());
             }
-            product.setOpeningStock(currentStock.subtract(quantity));
+            product.setCurrentStockQuantity(currentStock.subtract(quantity));
             productRepo.save(product);
         }
     }
@@ -250,9 +304,21 @@ public class SaleService {
         JournalEntry journal = new JournalEntry();
         journal.setVoucherNumber(sale.getVoucherNumber());
         journal.setEntryDate(sale.getDate());
+        FinancialYear financialYear = financialYearRepo
+                .findFirstByStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        sale.getDate(), sale.getDate())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No financial year exists for sale date: " + sale.getDate()));
+        journal.setFinancialYear(financialYear);
+        accountingPeriodRepo
+                .findFirstByFinancialYear_IdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        financialYear.getId(), sale.getDate(), sale.getDate())
+                .ifPresent(journal::setAccountingPeriod);
         journal.setDescription("Sales Entry - " + sale.getCustomerName());
 
         List<JournalEntryLine> lines = new ArrayList<>();
+        boolean gstEnabledForSale = zeroIfNull(sale.getGstTaxableAmount()).signum() > 0
+                || zeroIfNull(sale.getGstTotal()).signum() > 0;
 
         if (sale.isPartialCashEnabled() || sale.getPartialCashEnabled()) {
             BigDecimal cashPaid = zeroIfNull(sale.getCashPaid());
@@ -285,7 +351,9 @@ public class SaleService {
                 lines.add(customerLine);
             }
         } else {
-            BigDecimal customerDr = zeroIfNull(sale.getNetAmount());
+            BigDecimal customerDr = gstEnabledForSale
+                    ? zeroIfNull(sale.getGrandTotal()).subtract(zeroIfNull(sale.getCommissionAmount()))
+                    : zeroIfNull(sale.getNetAmount());
             if (customerDr.compareTo(BigDecimal.ZERO) > 0) {
                 Account debtorAccount = findAccountByName(sale.getCustomerName());
                 if (debtorAccount == null) {
@@ -303,7 +371,7 @@ public class SaleService {
             }
         }
 
-        if (sale.isDiscountEnabled() || sale.getDiscountEnabled()) {
+        if (!gstEnabledForSale && (sale.isDiscountEnabled() || sale.getDiscountEnabled())) {
             BigDecimal discount = zeroIfNull(sale.getDiscountAmount());
             if (discount.compareTo(BigDecimal.ZERO) > 0) {
                 Account discountAcc = findAccountByNames("Discount Allowed", "Discount", "discount");
@@ -338,9 +406,18 @@ public class SaleService {
         JournalEntryLine salesLine = new JournalEntryLine();
         salesLine.setAccount(salesAcc);
         salesLine.setDebit(BigDecimal.ZERO);
-        salesLine.setCredit(zeroIfNull(sale.getSubtotal()));
+        salesLine.setCredit(gstEnabledForSale
+                ? zeroIfNull(sale.getGstTaxableAmount())
+                : zeroIfNull(sale.getSubtotal()));
         salesLine.setJournalEntry(journal);
         lines.add(salesLine);
+
+        if (gstEnabledForSale) {
+            addTaxCredit(lines, journal, "Output CGST", zeroIfNull(sale.getGstCgst()));
+            addTaxCredit(lines, journal, "Output SGST", zeroIfNull(sale.getGstSgst()));
+            addTaxCredit(lines, journal, "Output IGST", zeroIfNull(sale.getGstIgst()));
+            addTaxCredit(lines, journal, "Output GST Cess", zeroIfNull(sale.getGstCess()));
+        }
 
         BigDecimal totalDebit = BigDecimal.ZERO;
         BigDecimal totalCredit = BigDecimal.ZERO;
@@ -356,30 +433,58 @@ public class SaleService {
         journalRepo.save(journal);
     }
 
+    private void addTaxCredit(List<JournalEntryLine> lines, JournalEntry journal,
+            String accountName, BigDecimal amount) {
+        if (amount.signum() <= 0) return;
+        Account taxAccount = accountRepo.findFirstByNameIgnoreCase(accountName).orElseGet(() -> {
+            Account created = new Account();
+            created.setName(accountName);
+            created.setType(AccountType.LIABILITY);
+            created.setAccountGroup("DUTIES_TAXES");
+            created.setBalance(BigDecimal.ZERO);
+            return accountRepo.save(created);
+        });
+        JournalEntryLine line = new JournalEntryLine();
+        line.setAccount(taxAccount);
+        line.setDebit(BigDecimal.ZERO);
+        line.setCredit(amount);
+        line.setJournalEntry(journal);
+        lines.add(line);
+    }
+
     @Transactional
     public Sale saveSale(Sale sale) {
-        validateAndPrepareSale(sale);
-        if (sale.getVoucherNumber() != null && !sale.getVoucherNumber().isBlank()
-            && saleRepo.findAll().stream().noneMatch(existing ->
-                sale.getVoucherNumber().equals(existing.getVoucherNumber()))
-            && journalRepo.findByVoucherNumber(sale.getVoucherNumber()).isPresent()) {
-            journalRepo.deleteByVoucherNumber(sale.getVoucherNumber());
-            journalRepo.flush();
-        } else if (sale.getVoucherNumber() != null && !sale.getVoucherNumber().isBlank()
-            && saleRepo.findAll().stream().anyMatch(existing ->
-                sale.getVoucherNumber().equals(existing.getVoucherNumber()))) {
-            throw new IllegalArgumentException(
-                "Voucher number already exists: " + sale.getVoucherNumber());
+        return persistSale(sale, false);
+    }
+
+    @Transactional
+    public Sale saveSaleFromInvoice(Sale sale) {
+        return persistSale(sale, true);
+    }
+
+    private Sale persistSale(Sale sale, boolean preserveInvoicePrices) {
+        validateAndPrepareSale(sale, preserveInvoicePrices);
+        for (SaleItem item : sale.getItems()) {
+            item.setSale(sale);
         }
+        Long tenantId = TenantContext.require();
+        int year = sale.getDate().getYear();
+        sale.setVoucherNumber(null);
         reduceStockForSale(sale);
-        Sale savedSale = saleRepo.save(sale);
+        Sale savedSale = saleRepo.saveAndFlush(sale);
+        savedSale.setVoucherNumber(String.format(
+                "SV-%d-%d-%06d", tenantId, year, savedSale.getId()));
+        savedSale = saleRepo.saveAndFlush(savedSale);
+        taxApiService.syncSaleTax(savedSale);
+        savedSale = saleRepo.saveAndFlush(savedSale);
         buildJournalEntry(savedSale);
         return savedSale;
     }
 
     @Async("accountExecutor")
     public CompletableFuture<Sale> saveSaleAsync(Sale sale) {
-        return CompletableFuture.completedFuture(saveSale(sale));
+        return CompletableFuture.completedFuture(
+                transactionTemplate.execute(status -> saveSale(sale)));
     }
 
     public List<Sale> getAll() {
@@ -410,6 +515,11 @@ public class SaleService {
         restoreStockForSale(existing);
 
         validateAndPrepareSale(newSale);
+        newSale.setVoucherNumber(String.format(
+                "SV-%d-%d-%06d",
+                TenantContext.require(),
+                newSale.getDate().getYear(),
+                existing.getId()));
         reduceStockForSale(newSale);
 
         existing.setCustomerName(newSale.getCustomerName());
@@ -438,6 +548,8 @@ public class SaleService {
         existing.setItems(updatedItems);
 
         Sale updatedSale = saleRepo.save(existing);
+        taxApiService.syncSaleTax(updatedSale);
+        updatedSale = saleRepo.save(updatedSale);
         buildJournalEntry(updatedSale);
         return updatedSale;
     }
@@ -447,21 +559,100 @@ public class SaleService {
         return CompletableFuture.completedFuture(updateSale(id, newSale));
     }
 
-    @Transactional
-    public String delete(@NonNull Long id) {
-        Sale sale = saleRepo.findById(id).orElse(null);
-        if (sale == null) {
-            return "Sale already deleted";
+    // @Transactional
+    // public String delete(@NonNull Long id) {
+    //     Sale sale = saleRepo.findById(id).orElse(null);
+    //     if (sale == null) {
+    //         return "Sale already deleted";
+    //     }
+
+    //     List<Long> affectedProductIds = new ArrayList<>();
+    //     if (sale.getItems() != null) {
+    //         for (SaleItem item : sale.getItems()) {
+    //             if (item != null && item.getProduct() != null) {
+    //                 Long productId = item.getProduct().getId();
+    //                 if (productId != null && !affectedProductIds.contains(productId)) {
+    //                     affectedProductIds.add(productId);
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     if (sale.getVoucherNumber() != null) {
+    //         deleteJournalByVoucherNumber(sale.getVoucherNumber());
+    //     }
+    //     taxApiService.cancelSourceInvoice("SALE", sale.getId());
+    //     saleRepo.delete(sale);
+    //     saleRepo.flush();
+    //     affectedProductIds.forEach(productService::recalculateCurrentStockQuantity);
+    //     return "Sale deleted successfully";
+    // }
+
+    
+@Transactional
+public String delete(@NonNull Long id) {
+    Sale sale = saleRepo.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException(
+                    "Sale not found with ID: " + id));
+
+    List<Long> affectedProductIds = new ArrayList<>();
+
+    if (sale.getItems() != null) {
+        for (SaleItem item : sale.getItems()) {
+            if (item == null || item.getProduct() == null) {
+                continue;
+            }
+
+            Long productId = item.getProduct().getId();
+
+            if (productId != null && !affectedProductIds.contains(productId)) {
+                affectedProductIds.add(productId);
+            }
         }
-        if (sale.getVoucherNumber() != null) {
-            deleteJournalByVoucherNumber(sale.getVoucherNumber());
-        }
-        restoreStockForSale(sale);
-        saleRepo.deleteById(id);
-        return "Sale deleted successfully";
     }
 
+    // Remove the journal entry linked to this sale.
+    deleteJournalByVoucherNumber(sale.getVoucherNumber());
+
+    // Cancel the associated tax record.
+    taxApiService.cancelSourceInvoice("SALE", sale.getId());
+
+    // Delete the sale and its items.
+    saleRepo.delete(sale);
+    saleRepo.flush();
+
+    // Recalculate stock based on remaining transactions.
+    affectedProductIds.forEach(
+            productService::recalculateCurrentStockQuantity
+    );
+
+    return "Sale and linked journal entry deleted successfully";
+}
+
+/**
+ * Called by JournalEntryService when the user deletes
+ * a journal entry belonging to a sale.
+ */
+@Transactional
+public boolean deleteByVoucherNumber(String voucherNumber) {
+    if (voucherNumber == null || voucherNumber.isBlank()) {
+        return false;
+    }
+
+    Sale sale = saleRepo.findFirstByVoucherNumber(voucherNumber)
+            .orElse(null);
+
+    if (sale == null) {
+        return false;
+    }
+
+    delete(sale.getId());
+    return true;
+}
+
+
     @Async("accountExecutor")
+    @Transactional
     public CompletableFuture<String> deleteAsync(@NonNull Long id) {
         return CompletableFuture.completedFuture(delete(id));
     }

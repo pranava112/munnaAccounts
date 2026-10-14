@@ -86,14 +86,21 @@
 
 package com.vpm.Accounts.Entity;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.TenantId;
+import com.vpm.Accounts.security.TenantEntityListener;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(
+        name = "uk_purchase_tenant_voucher",
+        columnNames = {"tenant_id", "voucher_number"}))
+@EntityListeners(TenantEntityListener.class)
 public class Purchase {
 
     @Id
@@ -102,12 +109,37 @@ public class Purchase {
 
     private String supplierName;
 
-    private String date;
+    private LocalDate date;
 
     private Long phoneNo;
 
-    @Column(unique = true)
+    @Column(precision = 19, scale = 2)
+    private java.math.BigDecimal gstTaxableAmount = java.math.BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private java.math.BigDecimal gstCgst = java.math.BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private java.math.BigDecimal gstSgst = java.math.BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private java.math.BigDecimal gstIgst = java.math.BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private java.math.BigDecimal gstCess = java.math.BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private java.math.BigDecimal gstTotal = java.math.BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private java.math.BigDecimal grandTotal = java.math.BigDecimal.ZERO;
+
+    @Column
     private String voucherNumber;
+
+    @TenantId
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private Long tenantId;
 
     @OneToMany(
             mappedBy = "purchase",
@@ -168,11 +200,11 @@ public class Purchase {
         this.supplierName = supplierName;
     }
 
-    public String getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(String date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 
@@ -184,12 +216,35 @@ public class Purchase {
         this.phoneNo = phoneNo;
     }
 
+    public java.math.BigDecimal getGstTaxableAmount() { return gstTaxableAmount; }
+    public void setGstTaxableAmount(java.math.BigDecimal value) { this.gstTaxableAmount = value; }
+    public java.math.BigDecimal getGstCgst() { return gstCgst; }
+    public void setGstCgst(java.math.BigDecimal value) { this.gstCgst = value; }
+    public java.math.BigDecimal getGstSgst() { return gstSgst; }
+    public void setGstSgst(java.math.BigDecimal value) { this.gstSgst = value; }
+    public java.math.BigDecimal getGstIgst() { return gstIgst; }
+    public void setGstIgst(java.math.BigDecimal value) { this.gstIgst = value; }
+    public java.math.BigDecimal getGstCess() { return gstCess; }
+    public void setGstCess(java.math.BigDecimal value) { this.gstCess = value; }
+    public java.math.BigDecimal getGstTotal() { return gstTotal; }
+    public void setGstTotal(java.math.BigDecimal value) { this.gstTotal = value; }
+    public java.math.BigDecimal getGrandTotal() { return grandTotal; }
+    public void setGrandTotal(java.math.BigDecimal value) { this.grandTotal = value; }
+
     public String getVoucherNumber() {
         return voucherNumber;
     }
 
     public void setVoucherNumber(String voucherNumber) {
         this.voucherNumber = voucherNumber;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
     }
 
     public List<PurchaseItem> getItems() {

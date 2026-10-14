@@ -7,10 +7,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,15 +21,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.vpm.Accounts.Entity.Account;
 import com.vpm.Accounts.Entity.AccountType;
+import com.vpm.Accounts.Entity.AccountingPeriod;
+import com.vpm.Accounts.Entity.FinancialYear;
 import com.vpm.Accounts.Entity.JournalEntry;
 import com.vpm.Accounts.Entity.Product;
 import com.vpm.Accounts.Entity.Sale;
 import com.vpm.Accounts.Entity.SaleItem;
 import com.vpm.Accounts.Repository.AccountRepository;
+import com.vpm.Accounts.Repository.AccountingPeriodRepository;
+import com.vpm.Accounts.Repository.FinancialYearRepository;
 import com.vpm.Accounts.Repository.JournalEntryRepository;
 import com.vpm.Accounts.Repository.ProductRepository;
 import com.vpm.Accounts.Repository.SaleRepository;
 import com.vpm.Accounts.Service.SaleService;
+import com.vpm.Accounts.security.TenantContext;
 
 @ExtendWith(MockitoExtension.class)
 class SaleServiceAccountingTest {
@@ -43,6 +50,12 @@ class SaleServiceAccountingTest {
 
     @Mock
     private JournalEntryRepository journalEntryRepository;
+
+    @Mock
+    private FinancialYearRepository financialYearRepository;
+
+    @Mock
+    private AccountingPeriodRepository accountingPeriodRepository;
 
     @InjectMocks
     private SaleService saleService;
@@ -67,13 +80,44 @@ class SaleServiceAccountingTest {
         validSale = new Sale();
         validSale.setVoucherNumber("SV-2026-001");
         validSale.setCustomerName("Cash Customer");
-        validSale.setDate("2026-09-05");
+        validSale.setDate(LocalDate.of(2026, 9, 5));
         validSale.setItems(List.of(item));
         validSale.setDiscountEnabled(false);
         validSale.setCommissionEnabled(false);
         validSale.setPartialCashEnabled(false);
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        TenantContext.set(42L);
+
+        FinancialYear financialYear = new FinancialYear();
+        financialYear.setId(6L);
+        financialYear.setName("2026-27");
+        financialYear.setStartDate(LocalDate.of(2026, 4, 1));
+        financialYear.setEndDate(LocalDate.of(2027, 3, 31));
+        financialYear.setStatus(FinancialYear.Status.OPEN);
+
+        AccountingPeriod accountingPeriod = new AccountingPeriod();
+        accountingPeriod.setId(11L);
+        accountingPeriod.setName("September 2026");
+        accountingPeriod.setStartDate(LocalDate.of(2026, 9, 1));
+        accountingPeriod.setEndDate(LocalDate.of(2026, 9, 30));
+        accountingPeriod.setStatus(AccountingPeriod.Status.OPEN);
+        accountingPeriod.setFinancialYear(financialYear);
+
+        when(financialYearRepository
+                .findFirstByStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        validSale.getDate(), validSale.getDate()))
+                .thenReturn(Optional.of(financialYear));
+        when(accountingPeriodRepository
+                .findFirstByFinancialYear_IdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        6L, validSale.getDate(), validSale.getDate()))
+                .thenReturn(Optional.of(accountingPeriod));
+    }
+
+    @AfterEach
+    void clearTenant() {
+        TenantContext.clear();
     }
 
     @Test
@@ -102,7 +146,13 @@ class SaleServiceAccountingTest {
         when(accountRepository.findFirstByNameIgnoreCase(eq("Commission Expense"))).thenReturn(Optional.empty());
         when(accountRepository.findFirstByNameIgnoreCase(eq("Commission"))).thenReturn(Optional.of(commission));
         when(accountRepository.findFirstByNameIgnoreCase(eq("sai"))).thenReturn(Optional.of(customer));
-        when(saleRepository.save(any(Sale.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(saleRepository.saveAndFlush(any(Sale.class))).thenAnswer(invocation -> {
+            Sale sale = invocation.getArgument(0);
+            if (sale.getId() == null) {
+                sale.setId(1L);
+            }
+            return sale;
+        });
 
         validSale.setCustomerName("sai");
         validSale.setDiscountEnabled(true);
@@ -115,6 +165,10 @@ class SaleServiceAccountingTest {
         validSale.setCashPaid(new BigDecimal("25"));
 
         saleService.saveSale(validSale);
+
+        assertEquals(validSale, validSale.getItems().get(0).getSale());
+        assertMoneyEquals("10", validSale.getItems().get(0).getProduct().getOpeningStockQuantity());
+        assertMoneyEquals("9", validSale.getItems().get(0).getProduct().getCurrentStockQuantity());
 
         var journalCaptor = org.mockito.ArgumentCaptor.forClass(JournalEntry.class);
         org.mockito.Mockito.verify(journalEntryRepository).save(journalCaptor.capture());

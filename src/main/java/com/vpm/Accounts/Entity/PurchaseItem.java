@@ -133,8 +133,11 @@ import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.TenantId;
+import com.vpm.Accounts.security.TenantEntityListener;
 
 @Entity
+@EntityListeners(TenantEntityListener.class)
 public class PurchaseItem {
 
     @Id
@@ -153,6 +156,10 @@ public class PurchaseItem {
     @JoinColumn(name = "purchase_id")
     @JsonBackReference
     private Purchase purchase;
+
+    @TenantId
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private Long tenantId;
 
     // =========================================
     // CALCULATE TOTAL
@@ -215,5 +222,13 @@ public class PurchaseItem {
 
     public void setPurchase(Purchase purchase) {
         this.purchase = purchase;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
     }
 }
